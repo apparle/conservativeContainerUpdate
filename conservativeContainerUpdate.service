@@ -1,0 +1,8 @@
+[Unit]
+Description=Conservatively update container images
+
+[Service]
+Type=oneshot
+ExecStart=%h/containers/conservativeContainerUpdate/conservativeContainerUpdate.py -a immich -f %h/containers/immich/image_versions.env -r immich.target -gu "${GOTIFY_URL}" -gt "${GOTIFY_TOKEN}"
+ExecStart=%h/containers/conservativeContainerUpdate/conservativeContainerUpdate.py -a authentik -f %h/containers/authentik/image_versions.env -r authentik.target -gu "${GOTIFY_URL}" -gt "${GOTIFY_TOKEN}"
+EnvironmentFile=%h/containers/conservativeContainerUpdate/gotify_creds.env

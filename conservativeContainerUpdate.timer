@@ -1,0 +1,10 @@
+[Unit]
+Description=Run conservative container updates 10am daily
+
+[Timer]
+OnCalendar=10:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+
