@@ -64,7 +64,38 @@ def notifyAndExit(title: str):
 
 ####################################################################################
 
-def restartService(serviceName: str):
+def restartDockerCompose(composeFile: str):
+    if not os.path.exists(composeFile):
+        printAndLog(f"== Error: File not found at '{composeFile}'")
+        notifyErrorAndExit(5)
+
+    workingDir = os.path.dirname(composeFile)
+    try:
+        printAndLog(f"Running docker compose down for file {composeFile} ...")
+        result = subprocess.run(['docker', 'compose', '-f', composeFile, 'down'], capture_output=True, text=True, check=True, cwd=workingDir)
+        printAndLog(f"docker compose down successfully. Output: {result.stdout.strip()}")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to do docker compose down. Error: {e.stderr.strip()}")
+        notifyErrorAndExit(7)
+
+    try:
+        printAndLog(f"Running docker compose pull for file {composeFile} ...")
+        result = subprocess.run(['docker', 'compose', '-f', composeFile, 'pull'], capture_output=True, text=True, check=True, cwd=workingDir)
+        printAndLog(f"docker compose pull successfully. Output: {result.stdout.strip()}")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to do docker compose pull. Error: {e.stderr.strip()}")
+        notifyErrorAndExit(7)
+
+    try:
+        printAndLog(f"Running docker compose up for file {composeFile} ...")
+        result = subprocess.run(['docker', 'compose', '-f', composeFile, 'up'], capture_output=True, text=True, check=True, cwd=workingDir)
+        printAndLog(f"docker compose up successfully. Output: {result.stdout.strip()}")
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to do docker compose up. Error: {e.stderr.strip()}")
+        notifyErrorAndExit(7)
+
+
+def restartSystemdUnit(unitName: str):
     try:
         printAndLog("Reloading user systemd daemon...")
         result = subprocess.run(['systemctl', '--user', 'daemon-reload'], capture_output=True, text=True, check=True)
@@ -74,11 +105,11 @@ def restartService(serviceName: str):
         notifyErrorAndExit(7)
 
     try:
-        printAndLog(f"Restarting user service: {serviceName}...")
-        result = subprocess.run(['systemctl', '--user', 'restart', serviceName], capture_output=True, text=True, check=True)
-        printAndLog(f"Service '{serviceName}' restarted successfully. Output: {result.stdout.strip()}")
+        printAndLog(f"Restarting user service: {unitName}...")
+        result = subprocess.run(['systemctl', '--user', 'restart', unitName], capture_output=True, text=True, check=True)
+        printAndLog(f"Service '{unitName}' restarted successfully. Output: {result.stdout.strip()}")
     except subprocess.CalledProcessError as e:
-        printAndLog(f"Failed to restart service '{serviceName}'. Error: {e.stderr.strip()}")
+        printAndLog(f"Failed to restart service '{unitName}'. Error: {e.stderr.strip()}")
         notifyErrorAndExit(8)
 
 
@@ -373,8 +404,12 @@ if __name__ == "__main__":
         help="Dry Run"
     )
     parser.add_argument('-r',
-        "--restart-service",
+        "--restart-systemd-unit",
         help="Systemd unit (service or target) to restart on update"
+    )
+    parser.add_argument('-rd',
+        "--restart-compose-file",
+        help="Docker Compose fie to restart on an update"
     )
     parser.add_argument('-gu',
         "--gotify-url",
@@ -457,8 +492,10 @@ if __name__ == "__main__":
         if not args.dry_run:
             updateEnvFile(args.file, envFileLines, updatedVars)
             printAndLog(f"Environment file {args.file} updated with version {args.new_version} and tags")
-            if args.restart_service:
-                restartService(args.restart_service)
+            if args.restart_systemd_unit:
+                restartSystemdUnit(args.restart_systemd_unit)
+            elif args.restart_compose_file:
+                restartDockerCompose(args.restart_compose_file)
         notifyAndExit(f"✅{app} conservative update: Done")
     else:
         printAndLog(f"No breaking changes found. Nothing to do.")
