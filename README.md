@@ -32,14 +32,14 @@ To do this:
 - For **Podman Quadlet**: Modify the `Image=` key and use a `EnvironmentFile=` under `[Service]` section. See my setup examples on https://github.com/apparle/multiquadlet/tree/main/examples
 
 Use these image env variables and set them up in the env file:
-- Immich:
+- Authentik:
   ```
   postgresql : ${AUTHENTIK_POSTGRESQL_IMAGE}
   redis : ${AUTHENTIK_REDIS_IMAGE}
   server : ghcr.io/goauthentik/server:${AUTHENTIK_TAG}
   worker : ghcr.io/goauthentik/server:${AUTHENTIK_TAG}
   ```
-- Authentik:
+- Immich:
   ```
   immich_postgres : ${IMMICH_DATABASE_IMAGE}
   immich_redis : ${IMMICH_REDIS_IMAGE}
