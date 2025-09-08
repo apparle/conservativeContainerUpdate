@@ -18,7 +18,7 @@ The script does following:
 1. Look up the `latest` tag for the specified app. Right-now only `authentik` and `immich` apps are supported.
 1. Check if some time has passed since the last release (default 36 hrs). If there's glaring bugs, usually releases are taken down or hotfixes are pushed. If the latest release is not old enough, upgrade is conservatively blocked.
 1. Compare the current's running version's compose file (taken from project, not local file) with the latest version's compose file. If anything except the image has changed, upgrade is conservatively blocked.
-1. For Immich specifically, look for a Github Discussion Annoucement with `label:changelog:breaking-change` since the currently running version. If yes, upgrade is conservatively blocked.
+1. For Immich specifically, look for a Github Discussion Annoucement with `label:changelog:breaking-change` ([recommended by devs](https://github.com/immich-app/immich/discussions/19546)) since the currently running version. If yes, upgrade is conservatively blocked.
 1. If above conditions are satisfied, upgrade the image env file (see installation steps) with the latest images.
 1. Restart the service.
 
