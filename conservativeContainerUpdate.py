@@ -96,20 +96,22 @@ def restartDockerCompose(composeFile: str):
 
 
 def restartSystemdUnit(unitName: str):
+    systemctl = ['systemctl']
+    if os.environ.get("XDG_RUNTIME_DIR"): systemctl.append('--user')
     try:
-        printAndLog("Reloading user systemd daemon...")
-        result = subprocess.run(['systemctl', '--user', 'daemon-reload'], capture_output=True, text=True, check=True)
-        printAndLog(f"Daemon reload successful. Output: {result.stdout.strip()}")
+        printAndLog(f"Reloading {" ".join(systemctl)} daemon...")
+        result = subprocess.run(systemctl + ['daemon-reload'], capture_output=True, text=True, check=True)
+        printAndLog(f"{" ".join(systemctl)} daemon reload successful. Output: {result.stdout.strip()}")
     except subprocess.CalledProcessError as e:
-        logging.error(f"Failed to reload user systemd daemon. Error: {e.stderr.strip()}")
+        logging.error(f"Failed to reload {" ".join(systemctl)} daemon. Error: {e.stderr.strip()}")
         notifyErrorAndExit(7)
 
     try:
-        printAndLog(f"Restarting user service: {unitName}...")
-        result = subprocess.run(['systemctl', '--user', 'restart', unitName], capture_output=True, text=True, check=True)
-        printAndLog(f"Service '{unitName}' restarted successfully. Output: {result.stdout.strip()}")
+        printAndLog(f"Restarting {" ".join(systemctl)} service: {unitName}...")
+        result = subprocess.run(systemctl + ['restart', unitName], capture_output=True, text=True, check=True)
+        printAndLog(f"{" ".join(systemctl)} service '{unitName}' restarted successfully. Output: {result.stdout.strip()}")
     except subprocess.CalledProcessError as e:
-        printAndLog(f"Failed to restart service '{unitName}'. Error: {e.stderr.strip()}")
+        printAndLog(f"Failed to restart {" ".join(systemctl)} service '{unitName}'. Error: {e.stderr.strip()}")
         notifyErrorAndExit(8)
 
 
@@ -447,7 +449,7 @@ if __name__ == "__main__":
             notifyErrorAndExit(1) # Exit if 'latest' couldn't be resolved
         elif resolvedTimeAgo < timedelta(hours=args.min_hours_since_latest):
             printAndLog(f"Resolved 'latest' for {owner}/{repo} as {args.new_version} released at {resolvedTime} i.e. {resolvedTimeAgo} ago, less than {args.min_hours_since_latest} hrs. Exiting")
-            notifyAndExit(f"ⓘ {app} conservative update: latest version is too now.")
+            notifyAndExit(f"ⓘ {app} conservative update: latest version is too new.")
         args.new_version = app_metadata[app]['tag2version'](resolvedVersion)
         print(f"Resolved 'latest' for {owner}/{repo} as {args.new_version} released {resolvedTimeAgo} ago...")
         myassert(app_metadata[app]['validateVersion'](args.new_version), f"Version string not valid: {args.new_version}")
