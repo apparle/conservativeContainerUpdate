@@ -208,7 +208,7 @@ app_metadata = {
         'changelogBreakingChanges' : immich_changelogBreakingChanges,
     },
     'authentik' : {
-        'templateUrl' : 'https://raw.githubusercontent.com/goauthentik/authentik/refs/tags/version/<VERSION>/docker-compose.yml',
+        'templateUrl' : 'https://raw.githubusercontent.com/goauthentik/authentik/refs/tags/version/<VERSION>/lifecycle/container/compose.yml',
         'owner' : 'goauthentik',
         'repo' : 'authentik',
         'tag2version' : lambda s: s.split('/')[1],
