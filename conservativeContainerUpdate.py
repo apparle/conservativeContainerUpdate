@@ -23,17 +23,17 @@ class GotifyNotifier:
         self.url = url
         self.token = token
     
-    def send(self, title: str, message: str):
+    def send(self, title: str, message: str, priority: int):
         payload = {
             "title": title,
             "message": message,
-            "priority": 5,
+            "priority": priority,
         }
 
         try:
             response = requests.post(self.url, data=payload, params={"token": self.token})
             response.raise_for_status() # Raise an exception for HTTP errors (4xx or 5xx)
-            print(f"Gotify notification sent successfully!")
+            print(f"Gotify notification p={priority} sent successfully!")
         except requests.exceptions.RequestException as e:
             print(f"Error sending Gotify notification: {e}")
         except Exception as e:
@@ -50,7 +50,7 @@ def printAndLog(s: str):
     globalLog = globalLog + s + "\n"
 
 def notifyErrorAndExit(e: int):
-    if notifier is not None: notifier.send("❌Error during conservative update", globalLog) 
+    if notifier is not None: notifier.send("❌Error during conservative update", globalLog, 10)
     exit(e)
 
 def myassert(c: bool, s: str):
@@ -58,8 +58,8 @@ def myassert(c: bool, s: str):
         printAndLog(s)
         notifyErrorAndExit(10)
 
-def notifyAndExit(title: str):
-    if notifier is not None: notifier.send(title, globalLog)
+def notifyAndExit(title: str, priority: int):
+    if notifier is not None and priority >= 0: notifier.send(title, globalLog, priority)
     exit(0)
 
 ####################################################################################
@@ -449,7 +449,7 @@ if __name__ == "__main__":
             notifyErrorAndExit(1) # Exit if 'latest' couldn't be resolved
         elif resolvedTimeAgo < timedelta(hours=args.min_hours_since_latest):
             printAndLog(f"Resolved 'latest' for {owner}/{repo} as {args.new_version} released at {resolvedTime} i.e. {resolvedTimeAgo} ago, less than {args.min_hours_since_latest} hrs. Exiting")
-            notifyAndExit(f"ⓘ {app} conservative update: latest version is too new.")
+            notifyAndExit(f"ⓘ {app} conservative update: latest version is too new.", 0)
         args.new_version = app_metadata[app]['tag2version'](resolvedVersion)
         print(f"Resolved 'latest' for {owner}/{repo} as {args.new_version} released {resolvedTimeAgo} ago...")
         myassert(app_metadata[app]['validateVersion'](args.new_version), f"Version string not valid: {args.new_version}")
@@ -459,7 +459,7 @@ if __name__ == "__main__":
 
     if args.base_version == args.new_version:
         printAndLog(f"Same version {args.base_version} and {args.new_version}, no update to be done.")
-        notifyAndExit(f"ⓘ {app} conservative update: no version change")
+        notifyAndExit(f"ⓘ {app} conservative update: no version change", -1)
 
     printAndLog(f"Comparing {app} versions: {args.base_version} vs {args.new_version}")
 
@@ -476,7 +476,7 @@ if __name__ == "__main__":
         printAndLog(f"No breaking changes detected in compose file for between {app} versions: {args.base_version} vs {args.new_version}.")
 
     if changelogBreakingChanges or composeBreakingChanges: 
-        notifyAndExit(f"⚠️ {app} conservative update: breaking change")
+        notifyAndExit(f"⚠️ {app} conservative update: breaking change", 8)
     elif args.file:
         printAndLog(f"Attempting to update {app} from {args.base_version} to {args.new_version}.")
         updatedVars = {}
@@ -487,7 +487,7 @@ if __name__ == "__main__":
                 continue
             elif '$' in updatedImages[k]:
                 printAndLog(f"The image for {k} container in {app} contains a variable. Unexpected, treating as a breaking change.")
-                notifyAndExit(f"⚠️ {app} conservative update: breaking change")
+                notifyAndExit(f"⚠️ {app} conservative update: breaking change", 8)
             else:
                 envVar = "{}_{}_IMAGE".format(app.upper(), k.upper())
                 updatedVars[envVar] = updatedImages[k]
@@ -498,8 +498,8 @@ if __name__ == "__main__":
                 restartSystemdUnit(args.restart_systemd_unit)
             elif args.restart_compose_file:
                 restartDockerCompose(args.restart_compose_file)
-        notifyAndExit(f"✅{app} conservative update: Done")
+        notifyAndExit(f"✅{app} conservative update: Done", 6)
     else:
         printAndLog(f"No breaking changes found. Nothing to do.")
-        notifyAndExit(f"✅{app} conservative update: Done")
+        notifyAndExit(f"✅{app} conservative update: Done", 6)
 
